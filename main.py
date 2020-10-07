@@ -1,5 +1,7 @@
-import numpy as np
+from WumpusWorld import WumpusWorld
 
-a = np.array([1,1,1,1,1,1,1])
+if __name__ == '__main__':
+    a = WumpusWorld.Agent()
+    b = WumpusWorld.Board(4, 4, 2)
 
-print(a)
+    s = a.location
