@@ -1,1 +1,1 @@
-numpy~=1.19.2
+pomegranate~=0.13.4

@@ -1,4 +1,5 @@
 import random as rd
+import sys
 
 
 class Coords:
@@ -8,6 +9,7 @@ class Coords:
 
     def __init__(self, x: int, y: int):
         """
+        :rtype: the objects grid location
         :parameter
             _x int:
             _y int:
@@ -44,9 +46,6 @@ class Coords:
     def set_x(self, x: int):
         self._x = x
 
-    def values(self):
-        return self._x, self._y
-
 
 class Agent:
     """
@@ -67,6 +66,7 @@ class Agent:
         self.arrow: bool = True
         self.alive: bool = True
         self.hasgold: bool = False
+        self.reward: int = 0
 
 
 class Board:
@@ -117,6 +117,68 @@ class Action:
         """
         self.board: Board = board
         self.agent: Agent = agent
+        self.grid: list = []
+        # self.adjacent: dict = {'breeze': False, 'stench': False, 'glitter': False}
+
+    def adjacent(self, adj: Coords):
+        """
+
+        :return:
+        """
+        if self.agent.location.x == adj.x \
+                and self.agent.location.y == adj.y + 1 \
+                or self.agent.location.x == adj.x + 1 \
+                and self.agent.location.y == adj.y \
+                or self.agent.location.x == adj.x \
+                and self.agent.location.y == adj.y + 1 \
+                or self.agent.location.x == adj.x - 1 \
+                and self.agent.location.x == adj.y \
+                or self.agent.location.x == adj.x \
+                and self.agent.location.y == adj.y - 1:
+            return True
+        else:
+            return False
+
+    def precept(self):
+        """
+        if the agent is located at the same coords as a alive wumpus or pits the game ends
+        :return:
+            stench: bool : is wumpas adjacent
+            glitter: bool : is the agent on the gold
+            breeze: list[bool] : are there pits adjacent
+        """
+
+        breeze: list = []
+        stench: bool = False
+
+        if self.agent.location == self.board.wumpuscoord and self.board.wumpusalive:
+            self.exitgame()
+        else:
+            stench = self.adjacent(self.board.wumpuscoord)
+
+        if self.agent.location == self.board.goldcoord:
+            glitter = True
+        else:
+            glitter = False
+
+        for _i in range(len(self.board.pitscoord)):
+
+            if self.agent.location == self.board.pitscoord[_i]:
+                self.exitgame()
+            else:
+                breeze.append(self.adjacent(self.board.pitscoord[_i]))
+
+        return stench, glitter, breeze
+
+    def exitgame(self):
+        if self.agent.hasgold and self.board.terminate:
+            self.agent.reward += 1001
+            print("You Win ", self.agent.reward)
+            sys.exit()
+        else:
+            self.agent.reward += -1001
+            print("You Lose ", self.agent.reward)
+            sys.exit()
 
     def move(self, action: int):
         """
@@ -131,18 +193,22 @@ class Action:
             7: Grab gold
             8: Climb out
         """
-        if action == 0:
+        if action == 0 and self.agent.facing == 0:
             self.agent.location.set_y(min(self.board.height - 1, self.agent.location.y + 1))
             self.precept()
-        elif action == 1:
+            self.grid.append(Coords(self.agent.location.x, self.agent.location.y))
+        elif action == 1 and self.agent.facing == 1:
             self.agent.location.set_x(min(self.board.width - 1, self.agent.location.x + 1))
             self.precept()
-        elif action == 2:
+            self.grid.append(Coords(self.agent.location.x, self.agent.location.y))
+        elif action == 2 and self.agent.facing == 2:
             self.agent.location.set_y(max(0, self.agent.location.y - 1))
             self.precept()
-        elif action == 3:
+            self.grid.append(Coords(self.agent.location.x, self.agent.location.y))
+        elif action == 3 and self.agent.facing == 3:
             self.agent.location.set_x(max(0, self.agent.location.x - 1))
             self.precept()
+            self.grid.append(Coords(self.agent.location.x, self.agent.location.y))
         elif action == 4:
             self.agent.facing += 1
             if self.agent.facing > 3:
@@ -153,39 +219,32 @@ class Action:
                 self.agent.facing = 3
         elif action == 6:
             if self.agent.arrow:
-
                 # shoot arrow north
                 if self.agent.facing == 0 and self.agent.location.y < self.board.wumpuscoord.y \
                         and self.agent.location.x == self.board.wumpuscoord.x:
                     self.board.wumpusalive = False
-
                 # shoot arrow east
                 elif self.agent.facing == 1 and self.agent.location.x < self.board.wumpuscoord.x \
                         and self.agent.location.y == self.board.wumpuscoord.y:
                     self.board.wumpusalive = False
-
                 # shoot arrow south
                 elif self.agent.facing == 2 and self.agent.location.y > self.board.wumpuscoord.y \
                         and self.agent.location.x == self.board.wumpuscoord.x:
                     self.board.wumpusalive = False
-
                 # shoot arrow west
                 elif self.agent.facing == 3 and self.agent.location.x > self.board.wumpuscoord.x \
                         and self.agent.location.y == self.board.wumpuscoord.y:
                     self.board.wumpusalive = False
-            else:
-                pass
+            self.agent.reward += -1
+        # grab gold
         elif action == 7:
             if self.agent.location == self.board.goldcoord:
                 self.agent.hasgold = True
+        # climb out with gold
         elif action == 8:
             if self.agent.hasgold and self.agent.location.x == 0 and self.agent.location.y == 0:
-                self.board.terminate = True
+                self.exitgame()
             else:
-                pass
+                self.agent.reward += -10
 
-    def precept(self):
-        print("Precet", self.board.wumpuscoord == self.agent.location)
-
-    def display(self):
-        pass
+        self.agent.reward += -1
