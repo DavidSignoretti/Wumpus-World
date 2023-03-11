@@ -1,4 +1,4 @@
-# Wumpo
+# Wumpus World
 SCS_3547_008 Intelligent Agents &amp; Reinforcement Learning
 
 "Wumpus World" is a classic problem in artificial intelligence and computer science, first introduced by computer scientist Stuart Russell in his book "Artificial Intelligence: A Modern Approach." It is a simple game-like environment that consists of a grid of rooms connected by passageways.
